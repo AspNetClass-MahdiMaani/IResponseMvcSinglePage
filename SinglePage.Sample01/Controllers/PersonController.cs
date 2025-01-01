@@ -95,7 +95,6 @@ namespace SinglePage.Sample01.Controllers
             }
             return Json(DeleteResponse);
             
-
         }
     }
 }
