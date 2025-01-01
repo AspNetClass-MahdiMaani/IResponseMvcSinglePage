@@ -12,32 +12,23 @@
     <div class="form-group position-relative">
         <input hidden id="id" />
         <div>
-            <div class="row">
-                <div class="col">
-                    <label class="fw-bold">FirstName</label>
-                </div>
-                <div class="col">
-                    <label class="fw-bold">LastName</label>
-                </div>
-                <div class="col">
-                    <label class="fw-bold">Email</label>
-                </div>
+            <div class="col">
+                <label class="fw-bold">FirstName</label>
+                <input id="firstName" type="text" class="form-control" placeholder="first name ..." autocomplete="off" />
+                <div id="firstNameValidationMessage" class="invalid-tooltip"></div>
             </div>
-            <div class="row">
-                <div class="col">
-                    <input id="firstName" type="text" class="form-control" placeholder="first name ..." autocomplete="off" />
-                    <div id="firstNameValidationMessage" class="invalid-tooltip"></div>
-                </div>
 
-                <div class="col">
-                    <input id="lastName" type="text" class="form-control" placeholder="last name ..." autocomplete="off" />
-                    <div id="lastNameValidationMessage" class="invalid-tooltip"></div>
-                </div>
-                <div class="col">
-                    <input id="email" type="text" class="form-control" placeholder="email ..." autocomplete="off" />
-                    <div id="emailValidationMessage" class="invalid-tooltip"></div>
-                </div>
+            <div class="col">
+                <label class="fw-bold">LastName</label>
+                <input id="lastName" type="text" class="form-control" placeholder="last name ..." autocomplete="off" />
+                <div id="lastNameValidationMessage" class="invalid-tooltip"></div>
             </div>
+            <div class="col">
+                <label class="fw-bold">Email</label>
+                <input id="email" type="text" class="form-control" placeholder="email ..." autocomplete="off" />
+                <div id="emailValidationMessage" class="invalid-tooltip"></div>
+            </div>
+
         </div>
     </div>
 </form>
@@ -67,19 +58,19 @@
 </div>
 
 <!-- Delete Confirm Modal -->
-<div class="modal fade" id="deleteConfirmModal" data-bs-backdrop="static">
+<div class="modal fade" id="confirmDeleteModal" data-bs-backdrop="static">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Delete Confirm</h5>
+                <h5 class="modal-title">Delete confirmation</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div id="deleteConfirmModalBody" class="modal-body">
+            <div id="confirmDeleteModalBody" class="modal-body">
             </div>
             <div class="modal-footer">
-                <input hidden id="inDeleteConfirmModalId" />
+                <input hidden id="confirmDeleteModalId" />
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button id="btnDeleteConfirm" type="button" class="btn btn-danger" data-bs-dismiss="modal">Delete</button>
+                <button id="btnConfirmDelete" type="button" class="btn btn-danger" data-bs-dismiss="modal">Delete</button>
             </div>
         </div>
     </div>
@@ -110,3 +101,4 @@
 </div>
 
 <script src="~/js/Person.js"></script>
+<script src="~/js/jQuery-3.6.0.min.js"></script>

@@ -3,7 +3,7 @@
 var form = document.getElementById("form");
 
 // Buttons
-var btnInsert = document.getElementById("btnInsert");
+var btnAdd = document.getElementById("btnAdd");
 var btnEdit = document.getElementById("btnEdit");
 var btnDelete = document.getElementById("btnDelete");
 var btnRefresh = document.getElementById("btnRefresh");
@@ -21,9 +21,9 @@ var lastNameValidationMessage = document.getElementById("lastNameValidationMessa
 var emailValidationMessage = document.getElementById("emailValidationMessage");
 
 // Delete Modal
-var deleteConfirmModal = document.getElementById("deleteConfirmModal");
-var inDeleteConfirmModalId = document.getElementById("inDeleteConfirmModalId");
-var deleteConfirmModalBody = document.getElementById("deleteConfirmModalBody");
+var confirmDeleteModal = document.getElementById("confirmDeleteModal");
+var confirmDeleteModalId = document.getElementById("confirmDeleteModalId");
+var confirmDeleteModalBody = document.getElementById("confirmDeleteModalBody");
 
 // Details Modal
 var detailsModal = document.getElementById("detailsModal");
@@ -36,23 +36,22 @@ var resultMessage = document.getElementById("resultMessage");
 //Event Listeners
 form.addEventListener("submit", Add);
 btnRefresh.addEventListener("click", LoadData);
-//btnEdit.addEventListener("click", Edit);
-//chkSelectAll.addEventListener("click", DeselectAll);
-//deleteConfirmModal.addEventListener("show.bs.modal", ConfirmDelete);
+btnEdit.addEventListener("click", Edit);
+chkSelectAll.addEventListener("click", SelectDeselectAll);
+confirmDeleteModal.addEventListener("show.bs.modal", ConfirmDelete);
 //detailsModal.addEventListener("show.bs.modal", Details);
 
 
 //Functionalties
+var allRowsCount = 0;
 var selectedRows = [];
-var allRowsCount;
 
 window.onload = LoadData();
 
 function LoadData() {
     console.log("start loading");
-    RefreshForm();
+    RefreshPage();
     chkSelectAll.checked = false;
-    DeselectAll();
     tbody.innerHTML = "";
     //Consuming REST api
     fetch("http://Localhost:5268/Person/GetAll")
@@ -61,23 +60,23 @@ function LoadData() {
             console.log({ dto });
             console.table(dto);
             let html = "";
-           // allRowsCount = json.response.length;
+            allRowsCount = dto.length;
+            console.log('allRowsCount: ' + allRowsCount);
             dto.forEach(function (dto) {
                 html += `<tr id="${dto.id}">
-                  <td><input id="selectRow" class="form-check-input" type="checkbox" name="${dto.id}" onClick="SelectRow(this);"</td>
-                  <td id="fntd">${dto.firstName}</td>
-                  <td id="lntd">${dto.lastName}</td>
-                  <td id="etd">${dto.email}</td>
+                  <td><input id="${dto.id}" class="form-check-input" type="checkbox" name="chk" onClick="SelectRow(this);"</td>
+                  <td id="firstNameCell">${dto.firstName}</td>
+                  <td id="lastNameCell">${dto.lastName}</td>
+                  <td id="emailCell">${dto.email}</td>
                   <td>
                     <input class="btn btn-outline-primary btn-sm" type="button" value="Details" data-bs-toggle="modal" data-bs-target="#detailsModal">
-                    <input class="btn btn-outline-danger btn-sm" type="button" value="Delete" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">                   
+                    <input class="btn btn-outline-danger btn-sm" type="button" value="Delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">                   
                   </td>
                 </tr>`;
             });
             tbody.innerHTML = html;
         });
 }
-
 function Add(e) {
     e.preventDefault();
     let isValidData = ValidateFormData();
@@ -109,59 +108,58 @@ function Add(e) {
         });
     }
 }
+function Edit() {
+    console.log("start editing");
+    const isValidData = ValidateFormData();
 
-//function Edit() {
-//    RefreshForm(false);
-//    let isValidData = ValidateFormData();
+    if (isValidData) {
+        const dto = {
+            Id: id.value,
+            FirstName: firstName.value,
+            LastName: lastName.value,
+            Email: email.value
+        };
 
-//    if (isValidData) {
-//        let updateDto = {
-//            Id: iptId.value,
-//            FirstName: iptFirstName.value,
-//            LastName: iptLastName.value,
-//            NationalCode: iptNationalCode.value,
-//        };
+        fetch("http://Localhost:5268/Person/Put", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "*/*"
+            },
+            body: JSON.stringify(dto)
+        }).then((res) => {
+            if (res.status === 409) {
+                email.innerText = `Person with email : ${email.value} already exist`;
+                email.classList.add("is-invalid");
+            } else if (res.status === 200) {
+                TriggerResultMessage("Operation Successful");
+                LoadData();
+            } else {
+                TriggerResultMessage("Operation Failed");
+            }
+        });
+    }
+}
 
-//        fetch("http://Localhost:5100/Person/Update", {
-//            method: "POST",
-//            headers: {
-//                "Content-Type": "application/json",
-//                Accept: "*/*",
-//            },
-//            body: JSON.stringify(updateDto),
-//        }).then((res) => {
-//            if (res.status == 409) {
-//                vmNationalCode.innerText = `Person with NationalCode : ${iptNationalCode.value} already exist`;
-//                iptNationalCode.classList.add("is-invalid");
-//            } else if (res.status == 200) {
-//                TriggerResultMessage("Operation Successful");
-//                LoadData();
-//            } else {
-//                TriggerResultMessage("Operation Failed");
-//            }
-//        });
-//    }
-//}
-
-//function Delete() {
-//    let id = idInDeleteConfirmModal.value;
-//    fetch("http://Localhost:5100/Person/Delete", {
-//        method: "POST",
-//        headers: {
-//            "Content-Type": "application/json",
-//            Accept: "*/*",
-//        },
-//        body: JSON.stringify({ Id: id }),
-//    }).then((res) => {
-//        if (res.status == 200) {
-//            TriggerResultMessage("Operation Successful");
-//            LoadData();
-//        } else {
-//            TriggerResultMessage("Operation Failed");
-//        }
-//    });
-//    idInDeleteConfirmModal.value = "";
-//}
+function Delete() {
+    let id = idInDeleteConfirmModal.value;
+    fetch("http://Localhost:5100/Person/Delete", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "*/*",
+        },
+        body: JSON.stringify({ Id: id }),
+    }).then((res) => {
+        if (res.status == 200) {
+            TriggerResultMessage("Operation Successful");
+            LoadData();
+        } else {
+            TriggerResultMessage("Operation Failed");
+        }
+    });
+    idInDeleteConfirmModal.value = "";
+}
 
 //function DeleteSelected() {
 //    let deleteSelectedDto = { DeletePersonDtosList: [] };
@@ -185,67 +183,64 @@ function Add(e) {
 //    });
 //}
 
-function DeselectAll() {
-    document.querySelectorAll("#selectRow").forEach((checkBox) => {
-        chkSelectAll.checked = false;
-        //    if (chkSelectAll.checked) {
-        //        if (!selectedRowsList.includes(checkBox.name)) {
-        //            checkBox.checked = true;
-        //            selectedRowsList.push(checkBox.name);
-        //        }
-        //    } else {
-        //        checkBox.checked = false;
-        //        selectedRowsList = [];
-        //    }
-        //});
-        //if (chkSelectAll.checked) {
-        //    btnInsert.disabled = true;
-        //    btnEdit.disabled = true;
-        //    btnDelete.disabled = false;
-        //    RefreshForm();
-        //} else {
-        //    btnInsert.disabled = false;
-        //    btnEdit.disabled = true;
-        //    btnDelete.disabled = true;
-        //    RefreshForm();
-        //}
-    })
+function SelectDeselectAll() {
+    const checkBoxes = document.getElementsByName("chk");
+    console.clear();
+    console.log("SelectDeselectAll()");
+    console.log("selectedRows: " + selectedRows.length);
+    if (chkSelectAll.checked) {
+        console.log("checked");
+
+        for (let i = 0; i < checkBoxes.length; i++) {
+
+            checkBoxes[i].checked = true;
+        }
+    } else {
+        console.log("unChecked");
+
+        for (let i = 0; i < checkBoxes.length; i++) {
+
+            checkBoxes[i].checked = false;
+        }
+    }
+
 }
 
-//function SelectRow(checkBox) {
-//    if (checkBox.checked == true) {
-//        selectedRowsList.push(checkBox.name);
-//    } else selectedRowsList.splice(selectedRowsList.indexOf(checkBox.name), 1);
+function SelectRow(checkBox) {
+    console.clear();
+    if (checkBox.checked === true) {
+        selectedRows.push(checkBox.id);
+    }
+    else selectedRows.splice(selectedRows.indexOf(checkBox.id), 1);
 
-//    if (selectedRowsList.length != allRowsCount) cbxSelectAll.checked = false;
-//    else cbxSelectAll.checked = true;
+    console.log(`selectedRows: ${selectedRows.length}`);
 
-//    if (selectedRowsList.length >= 1) {
-//        btnDeleteSelected.disabled = false;
-//        btnInsert.disabled = true;
-//    } else {
-//        btnDeleteSelected.disabled = true;
-//        btnInsert.disabled = false;
-//    }
+    switch (selectedRows.length) {
+        case 1:
 
-//    if (selectedRowsList.length == 1) {
-//        btnEdit.disabled = false;
-//        RefreshForm();
-//        iptId.value = selectedRowsList[0];
-//        iptFirstName.value = document.querySelector(
-//            `tr[id="${selectedRowsList[0]}"] td[id="FNTD"]`
-//        ).innerText;
-//        iptLastName.value = document.querySelector(
-//            `tr[id="${selectedRowsList[0]}"] td[id="LNTD"]`
-//        ).innerText;
-//        iptNationalCode.value = document.querySelector(
-//            `tr[id="${selectedRowsList[0]}"] td[id="NCTD"]`
-//        ).innerText;
-//    } else {
-//        btnEdit.disabled = true;
-//        RefreshForm(true);
-//    }
-//}
+            RefreshPage();
+            btnEdit.disabled = false;
+            btnDelete.disabled = false;
+            id.value = selectedRows[0];
+            firstName.value = document.querySelector(
+                `tr[id="${selectedRows[0]}"] td[id="firstNameCell"]`
+            ).innerText;
+            lastName.value = document.querySelector(
+                `tr[id="${selectedRows[0]}"] td[id="lastNameCell"]`
+            ).innerText;
+            email.value = document.querySelector(
+                `tr[id="${selectedRows[0]}"] td[id="emailCell"]`
+            ).innerText;
+            break;
+        case selectedRows.length > 1:
+            RefreshPage();
+            break;
+
+        default:
+            RefreshPage();
+            break;
+    }
+}
 
 //function Details(event) {
 //    let clickedButton = event.relatedTarget;
@@ -261,21 +256,24 @@ function DeselectAll() {
 //        });
 //}
 
-function RefreshForm() {
-   
-        firstName.classList.remove("is-invalid", "is-valid");
-        lastName.classList.remove("is-invalid", "is-valid");
-        email.classList.remove("is-invalid", "is-valid");
+function RefreshPage() {
+    btnAdd.disabled = false;
+    btnEdit.disabled = true;
+    btnDelete.disabled = true;
 
-        firstName.value = "";
-        firstName.value = "";
-        lastName.value = "";
-        email.value = "";
+    firstName.classList.remove("is-invalid", "is-valid");
+    lastName.classList.remove("is-invalid", "is-valid");
+    email.classList.remove("is-invalid", "is-valid");
 
-        firstNameValidationMessage.innerText = "";
-        lastNameValidationMessage.innerText = "";
-        emailValidationMessage.innerText = "";
-    
+    firstName.value = "";
+    firstName.value = "";
+    lastName.value = "";
+    email.value = "";
+
+    firstNameValidationMessage.innerText = "";
+    lastNameValidationMessage.innerText = "";
+    emailValidationMessage.innerText = "";
+
 }
 
 function ValidateFormData() {
@@ -312,38 +310,25 @@ function ValidateFormData() {
     return isValidData;
 }
 
-//function ConfirmDelete(event) {
-//    let clickedButton = event.relatedTarget;
+function ConfirmDelete(event) {
+    let id = clickedButton.parentNode.parentNode.id;
+    idInDeleteConfirmModal.value = id;
+    PassDetails(id);
+    btnDeleteConfirm.addEventListener("click", Delete);
+}
 
-//    if (clickedButton.value == "Delete") {
-//        let id = clickedButton.parentNode.parentNode.id;
-//        idInDeleteConfirmModal.value = id;
-
-//        PassDetailsToDeleteConfirm(id);
-
-//        btnDeleteConfirm.addEventListener("click", Delete);
-//    } else {
-//        if (selectedRowsList.length == 1)
-//            PassDetailsToDeleteConfirm(selectedRowsList[0]);
-//        else
-//            deleteConfirmModalBody.innerHTML = `Your are deleting <strong>${selectedRowsList.length} records</strong> , Are you sure ? `;
-
-//        btnDeleteConfirm.addEventListener("click", DeleteSelected);
-//    }
-//}
-
-//function PassDetailsToDeleteConfirm(id) {
-//    let firstName = document.querySelector(
-//        `tr[id="${id}"] td[id="FNTD"]`
-//    ).innerText;
-//    let lastName = document.querySelector(
-//        `tr[id="${id}"] td[id="LNTD"]`
-//    ).innerText;
-//    let nationalCode = document.querySelector(
-//        `tr[id="${id}"] td[id="NCTD"]`
-//    ).innerText;
-//    deleteConfirmModalBody.innerHTML = `You are deleting :<br><strong>First Name : ${firstName}<br>Last Name : ${lastName}<br>National Code : ${nationalCode}</strong><br>Are you sure ?`;
-//}
+function PassDetails(id) {
+    let firstName = document.querySelector(
+        `tr[id="${id}"] td[id="firstName"]`
+    ).innerText;
+    let lastName = document.querySelector(
+        `tr[id="${id}"] td[id="lastName"]`
+    ).innerText;
+    let email = document.querySelector(
+        `tr[id="${id}"] td[id="email"]`
+    ).innerText;
+    confirmDeleteModalBody.innerHTML = `You are deleting :<br><strong>First Name : ${firstName}<br>Last Name : ${lastName}<br>Email : ${email}</strong><br>Are you sure ?`;
+}
 
 function TriggerResultMessage(message) {
     resultMessage.innerText = message;

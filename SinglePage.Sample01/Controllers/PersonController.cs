@@ -82,19 +82,43 @@ namespace SinglePage.Sample01.Controllers
             }
 
             return null;
-        } 
+        }
         #endregion
 
+        #region [- Delete() -]
         public async Task<IActionResult> Delete(DeletePersonServiceDto dto)
         {
-            var getResponse = await _personService.GetAll();
-            var DeleteResponse = await _personService.Delete(dto);
-            if (ModelState.IsValid && getResponse.Value is not null)
-            {
-                return DeleteResponse.IsSuccessful ? Ok() : BadRequest();
-            }
-            return Json(DeleteResponse);
-            
+            Guard_PersonService();
+            var deleteResponse = await _personService.Delete(dto);
+            return deleteResponse.IsSuccessful ? Ok() : BadRequest();
         }
+        #endregion
+
+        #region [- Put() -]
+
+        public async Task<IActionResult> Put(PutPersonServiceDto dto)
+        {
+            Guard_PersonService();
+            var putDto = new GetPersonServiceDto() { Email = dto.Email };
+
+
+
+            #region [- For checking & avoiding email duplication -]
+            var getResponse = await _personService.Get(putDto);//For checking & avoiding email duplication
+            switch (ModelState.IsValid)
+            {
+                case true when getResponse.Value is null:
+                    {
+                        var putResponse = await _personService.Put(dto);
+                        return putResponse.IsSuccessful ? Ok() : BadRequest();
+                    }
+                case true when getResponse.Value is not null://For checking & avoiding email duplication
+                    return Conflict(dto);
+                default:
+                    return BadRequest();
+            }
+            #endregion
+        }
+        #endregion
     }
 }

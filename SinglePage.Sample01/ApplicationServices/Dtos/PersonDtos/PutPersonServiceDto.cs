@@ -8,5 +8,5 @@ public class PutPersonServiceDto
 
     public string LastName { get; set; }
 
-    public string NationalCode { get; set; }
+    public string Email { get; set; }
 }

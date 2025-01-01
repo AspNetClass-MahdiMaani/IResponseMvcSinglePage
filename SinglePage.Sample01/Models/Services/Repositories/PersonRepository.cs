@@ -30,7 +30,6 @@ namespace SinglePage.Sample01.Models.Services.Repositories
                 {
                     return new Response<Person>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.NullInput, null);
                 }
-
                 await _projectDbContext.AddAsync(model);
                 await _projectDbContext.SaveChangesAsync();
                 return new Response<Person>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, model);
@@ -87,15 +86,7 @@ namespace SinglePage.Sample01.Models.Services.Repositories
         #endregion
 
         #region [- Update() -]
-        public Task<IResponse<Person>> Update(Person obj)
-        {
-            throw new NotImplementedException();
-        }
-        #endregion
-
-        #region [- Delete() -]
-
-        public async Task<IResponse<Person>> Delete(Person obj)
+        public async Task<IResponse<Person>> Update(Person obj)
         {
             try
             {
@@ -105,9 +96,9 @@ namespace SinglePage.Sample01.Models.Services.Repositories
                 }
                 else
                 {
-                    _projectDbContext.Entry(obj).State = EntityState.Deleted;
+                    _projectDbContext.Update(obj);
                     await _projectDbContext.SaveChangesAsync();
-                    return new Response<Person>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, obj);
+                    return new Response<Person>(true,HttpStatusCode.OK, ResponseMessages.SuccessfullOperation,obj);
                 }
 
             }
@@ -117,7 +108,30 @@ namespace SinglePage.Sample01.Models.Services.Repositories
                 throw;
             }
         }
+        #endregion
 
+        #region [- Delete() -]
+        public async Task<IResponse<Person>> Delete(Person model)
+        {
+            try
+            {
+                if (model is null)
+                {
+                    return new Response<Person>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.NullInput, null);
+                }
+                else
+                {
+                    _projectDbContext.Person.Remove(model);
+                    await _projectDbContext.SaveChangesAsync();
+                    var response= new Response<Person>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, model);
+                    return response;
+                }
+            }
+            catch (Exception)
+            {
+                throw new Exception("Invalid operation");
+            }
+        }
         #endregion
     }
 }

@@ -7,6 +7,7 @@ using SinglePage.Sample01.Models.DomainModels.PersonAggregates;
 using SinglePage.Sample01.Models.Services.Contracts;
 using System;
 using System.Net;
+using System.Reflection.Metadata.Ecma335;
 
 namespace SinglePage.Sample01.ApplicationServices.Services
 {
@@ -20,7 +21,7 @@ namespace SinglePage.Sample01.ApplicationServices.Services
             _personRepository = personRepository;
         }
         #endregion
-        
+
         #region [- GetAll() -]
         public async Task<IResponse<GetAllPersonServiceDto>> GetAll()
         {
@@ -36,7 +37,7 @@ namespace SinglePage.Sample01.ApplicationServices.Services
                 return new Response<GetAllPersonServiceDto>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.Error, null);
             }
 
-            var getAllPersonDto = new GetAllPersonServiceDto(){GetPersonServiceDtos = new List<GetPersonServiceDto>()};
+            var getAllPersonDto = new GetAllPersonServiceDto() { GetPersonServiceDtos = new List<GetPersonServiceDto>() };
 
             foreach (var item in selectAllResponse.Value)
             {
@@ -85,9 +86,9 @@ namespace SinglePage.Sample01.ApplicationServices.Services
             };
             var response = new Response<GetPersonServiceDto>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, getPersonServiceDto);
             return response;
-        } 
+        }
         #endregion
-        
+
         #region [- Post() -]
         public async Task<IResponse<PostPersonServiceDto>> Post(PostPersonServiceDto dto)
         {
@@ -115,10 +116,26 @@ namespace SinglePage.Sample01.ApplicationServices.Services
         #endregion
 
         #region [- Put() -]
-
-        public Task<IResponse<PutPersonServiceDto>> Put(PutPersonServiceDto dto)
+        public async Task<IResponse<PutPersonServiceDto>> Put(PutPersonServiceDto dto)
         {
-            throw new NotImplementedException();
+            if (dto is null)
+            {
+                return new Response<PutPersonServiceDto>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.NullInput, null);
+            }
+            var putPerson = new Person()
+            {
+                Id = dto.Id,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email=dto.Email
+            };
+            var updateResponse=await _personRepository.Update(putPerson);
+            if (!updateResponse.IsSuccessful)
+            {
+                return new Response<PutPersonServiceDto>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.NullInput, null);
+            }
+            var response = new Response<PutPersonServiceDto>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, dto);
+            return response;
         }
 
         #endregion
@@ -126,20 +143,21 @@ namespace SinglePage.Sample01.ApplicationServices.Services
         #region [- Delete() -]
         public async Task<IResponse<DeletePersonServiceDto>> Delete(DeletePersonServiceDto dto)
         {
+            if (dto is null)
+            {
+                return new Response<DeletePersonServiceDto>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.NullInput, null);
+            }
             var person = new Person()
             {
                 Id = dto.Id,
             };
-            var SelectResponse=await _personRepository.Select(person);
-            if (SelectResponse is null)
+            var deleteResponse = await _personRepository.Delete(person);
+            if (deleteResponse is null || !deleteResponse.IsSuccessful)
             {
                 return new Response<DeletePersonServiceDto>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.NullInput, null);
             }
-            else
-            {
-                await _personRepository.Delete(person);
-                return new Response<DeletePersonServiceDto>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, dto);
-            }
+            var response= new Response<DeletePersonServiceDto>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, dto);
+            return response;
         }
 
         #endregion
