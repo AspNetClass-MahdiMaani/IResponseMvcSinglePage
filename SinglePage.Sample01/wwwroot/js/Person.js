@@ -7,7 +7,7 @@ var btnAdd = document.getElementById("btnAdd");
 var btnEdit = document.getElementById("btnEdit");
 var btnDelete = document.getElementById("btnDelete");
 var btnRefresh = document.getElementById("btnRefresh");
-var btnDeleteConfirm = document.getElementById("btnDeleteConfirm");
+var btnConfirmDelete = document.getElementById("btnConfirmDelete");
 
 // Inputs
 var id = document.getElementById("id");
@@ -27,6 +27,7 @@ var confirmDeleteModalBody = document.getElementById("confirmDeleteModalBody");
 
 // Details Modal
 var detailsModal = document.getElementById("detailsModal");
+var detailsModalBody = document.getElementById("detailsModalBody");
 
 // Others
 var chkSelectAll = document.getElementById("selectAll");
@@ -37,9 +38,10 @@ var resultMessage = document.getElementById("resultMessage");
 form.addEventListener("submit", Add);
 btnRefresh.addEventListener("click", LoadData);
 btnEdit.addEventListener("click", Edit);
+btnDelete.addEventListener("click", DeleteSelected);
 chkSelectAll.addEventListener("click", SelectDeselectAll);
 confirmDeleteModal.addEventListener("show.bs.modal", ConfirmDelete);
-//detailsModal.addEventListener("show.bs.modal", Details);
+detailsModal.addEventListener("show.bs.modal", Details);
 
 
 //Functionalties
@@ -111,7 +113,6 @@ function Add(e) {
 function Edit() {
     console.log("start editing");
     const isValidData = ValidateFormData();
-
     if (isValidData) {
         const dto = {
             Id: id.value,
@@ -121,7 +122,7 @@ function Edit() {
         };
 
         fetch("http://Localhost:5268/Person/Put", {
-            method: "POST",
+            method: "Put",
             headers: {
                 "Content-Type": "application/json",
                 Accept: "*/*"
@@ -141,47 +142,34 @@ function Edit() {
     }
 }
 
-function Delete() {
-    let id = idInDeleteConfirmModal.value;
-    fetch("http://Localhost:5100/Person/Delete", {
-        method: "POST",
+function Delete(id) {
+
+    fetch("http://localhost:5268/Person/Delete", {
+        method: "Post",
         headers: {
             "Content-Type": "application/json",
             Accept: "*/*",
         },
         body: JSON.stringify({ Id: id }),
     }).then((res) => {
-        if (res.status == 200) {
+        if (res.status === 200) {
             TriggerResultMessage("Operation Successful");
             LoadData();
         } else {
             TriggerResultMessage("Operation Failed");
         }
     });
-    idInDeleteConfirmModal.value = "";
 }
 
-//function DeleteSelected() {
-//    let deleteSelectedDto = { DeletePersonDtosList: [] };
-//    selectedRowsList.forEach((personId) => {
-//        deleteSelectedDto.DeletePersonDtosList.push({ Id: personId });
-//    });
-//    fetch("http://Localhost:5100/Person/DeleteSelected", {
-//        method: "POST",
-//        headers: {
-//            "Content-Type": "application/json",
-//            Accept: "*/*",
-//        },
-//        body: JSON.stringify(deleteSelectedDto),
-//    }).then((res) => {
-//        if (res.status == 200) {
-//            TriggerResultMessage("Operation Successful");
-//            LoadData();
-//        } else {
-//            TriggerResultMessage("Operation Failed");
-//        }
-//    });
-//}
+function DeleteSelected() {
+    let checkBox = document.getElementsByName("chk");
+    console.log("Mahdi");
+    if (checkBox.checked === false) {
+        ErrorEvent("Not valid");
+    }
+    else { document.getElementById(selectedRows.id); }
+    Delete();
+}
 
 function SelectDeselectAll() {
     const checkBoxes = document.getElementsByName("chk");
@@ -242,19 +230,11 @@ function SelectRow(checkBox) {
     }
 }
 
-//function Details(event) {
-//    let clickedButton = event.relatedTarget;
-//    let id = clickedButton.parentNode.parentNode.id;
-
-//    fetch(`http://Localhost:5100/Person/Details?id=${id}`)
-//        .then((res) => res.json())
-//        .then((json) => {
-//            let inModalUl = document.querySelectorAll(".card li");
-//            inModalUl[0].innerText = `First Name : ${json.firstName}`;
-//            inModalUl[1].innerText = `Last Name : ${json.lastName}`;
-//            inModalUl[2].innerText = `National Code : ${json.nationalCode}`;
-//        });
-//}
+function Details(event) {
+    let clickedButton = event.relatedTarget;
+    let id = clickedButton.parentNode.parentNode.id;
+    PassDetails(id);
+}
 
 function RefreshPage() {
     btnAdd.disabled = false;
@@ -288,18 +268,18 @@ function ValidateFormData() {
     }
 
     if (lastName.value === "") {
-        lastNameValidationMessage.innerText = "Last name is required";
+        lastNameValidationMessage.innerText = "Lastname is required";
         lastName.classList.add("is-invalid");
         isValidData = false;
     } else {
         lastName.classList.add("is-valid");
     }
 
-    if (! /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    if ( /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
         .test(email.value)) {
-        email.innerText = "Wrong email";
-        email.classList.add("is-invalid");
-        isValidData = false;
+        email.innerText = "Richtig email";
+        email.classList.add("is-valid");
+        isValidData = true;
 
         //const validateEmail = (email) => {
         //    return email.match(
@@ -311,22 +291,24 @@ function ValidateFormData() {
 }
 
 function ConfirmDelete(event) {
+    let clickedButton = event.relatedTarget;
     let id = clickedButton.parentNode.parentNode.id;
-    idInDeleteConfirmModal.value = id;
+    confirmDeleteModalId.value = id;
     PassDetails(id);
-    btnDeleteConfirm.addEventListener("click", Delete);
+    btnConfirmDelete.addEventListener("click", Delete);
 }
 
 function PassDetails(id) {
     let firstName = document.querySelector(
-        `tr[id="${id}"] td[id="firstName"]`
+        `tr[id="${id}"] td[id="firstNameCell"]`
     ).innerText;
     let lastName = document.querySelector(
-        `tr[id="${id}"] td[id="lastName"]`
+        `tr[id="${id}"] td[id="lastNameCell"]`
     ).innerText;
     let email = document.querySelector(
-        `tr[id="${id}"] td[id="email"]`
+        `tr[id="${id}"] td[id="emailCell"]`
     ).innerText;
+    detailsModalBody.innerHTML = `<br><strong>First Name : ${firstName}<br>Last Name : ${lastName}<br>Email : ${email}</strong><br>`;
     confirmDeleteModalBody.innerHTML = `You are deleting :<br><strong>First Name : ${firstName}<br>Last Name : ${lastName}<br>Email : ${email}</strong><br>Are you sure ?`;
 }
 

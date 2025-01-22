@@ -86,33 +86,37 @@ namespace SinglePage.Sample01.Controllers
         #endregion
 
         #region [- Delete() -]
+        [HttpPost]
         public async Task<IActionResult> Delete(DeletePersonServiceDto dto)
         {
             Guard_PersonService();
             var deleteResponse = await _personService.Delete(dto);
-            return deleteResponse.IsSuccessful ? Ok() : BadRequest();
+            return Json(deleteResponse);
         }
         #endregion
 
         #region [- Put() -]
-
+        [HttpPut]
         public async Task<IActionResult> Put(PutPersonServiceDto dto)
         {
             Guard_PersonService();
-            var putDto = new GetPersonServiceDto() { Email = dto.Email };
-
-
+            var putDto = new GetPersonServiceDto()
+            {
+                FirstName=dto.FirstName,
+                LastName=dto.LastName,
+                Email = dto.Email
+            };
 
             #region [- For checking & avoiding email duplication -]
             var getResponse = await _personService.Get(putDto);//For checking & avoiding email duplication
             switch (ModelState.IsValid)
             {
-                case true when getResponse.Value is null:
+                case true when getResponse.Value is not null:
                     {
                         var putResponse = await _personService.Put(dto);
-                        return putResponse.IsSuccessful ? Ok() : BadRequest();
+                        return Json(putResponse);
                     }
-                case true when getResponse.Value is not null://For checking & avoiding email duplication
+                case true when getResponse.Value is null://For checking & avoiding email duplication
                     return Conflict(dto);
                 default:
                     return BadRequest();

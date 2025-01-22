@@ -147,6 +147,7 @@ namespace SinglePage.Sample01.ApplicationServices.Services
             {
                 return new Response<DeletePersonServiceDto>(false, HttpStatusCode.UnprocessableContent, ResponseMessages.NullInput, null);
             }
+
             var person = new Person()
             {
                 Id = dto.Id,
