@@ -87,11 +87,23 @@ namespace SinglePage.Sample01.Controllers
 
         #region [- Delete() -]
         [HttpPost]
-        public async Task<IActionResult> Delete(DeletePersonServiceDto dto)
+        public async Task<IActionResult> Delete([FromBody] DeletePersonServiceDto dto)
         {
             Guard_PersonService();
-            var deleteResponse = await _personService.Delete(dto);
-            return Json(deleteResponse);
+            var getDto = new GetPersonServiceDto()
+            {
+                Id = dto.Id
+            };
+            var getResponse= _personService.Get(getDto);
+            if (ModelState.IsValid && getResponse!=null)
+            {
+                var deleteResponse = await _personService.Delete(dto);
+                return Json(deleteResponse);
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
         #endregion
 
@@ -102,6 +114,7 @@ namespace SinglePage.Sample01.Controllers
             Guard_PersonService();
             var putDto = new GetPersonServiceDto()
             {
+                Id=dto.Id,
                 FirstName=dto.FirstName,
                 LastName=dto.LastName,
                 Email = dto.Email
