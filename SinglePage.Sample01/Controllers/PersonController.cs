@@ -1,15 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SinglePage.Sample01.ApplicationServices.Contracts;
 using SinglePage.Sample01.ApplicationServices.Dtos.PersonDtos;
-using SinglePage.Sample01.ApplicationServices.Services;
-using SinglePage.Sample01.Models.DomainModels.PersonAggregates;
-using System.Net;
 
 namespace SinglePage.Sample01.Controllers
 {
     public class PersonController : Controller
     {
-        private readonly IPersonService _personService ;
+        private readonly IPersonService _personService;
 
         #region [- ctor -]
         public PersonController(IPersonService personService)
@@ -36,9 +33,10 @@ namespace SinglePage.Sample01.Controllers
         #endregion
 
         #region [- Get() -]
-        public async Task<IActionResult> Get(GetPersonServiceDto dto)
+        public async Task<IActionResult> Get(Guid id)
         {
             Guard_PersonService();
+            var dto = new GetPersonServiceDto() { Id = id };
             var getResponse = await _personService.Get(dto);
             var response = getResponse.Value;
             if (response is null)
@@ -70,7 +68,7 @@ namespace SinglePage.Sample01.Controllers
             {
                 return BadRequest();
             }
-        } 
+        }
         #endregion
 
         #region [- PersonServiceGuard() -]
@@ -90,51 +88,43 @@ namespace SinglePage.Sample01.Controllers
         public async Task<IActionResult> Delete([FromBody] DeletePersonServiceDto dto)
         {
             Guard_PersonService();
-            var getDto = new GetPersonServiceDto()
+            var deleteResponse = await _personService.Delete(dto);
+            return deleteResponse.IsSuccessful ? Ok() : BadRequest();
+        }
+        #endregion
+
+        #region [- Put() -]
+        [HttpPost]
+        public async Task<IActionResult> Put([FromBody] PutPersonServiceDto dto)
+        {
+            Guard_PersonService();
+            var putDto = new GetPersonServiceDto() { Email = dto.Email };
+
+            #region [- For checking & avoiding email duplication -]
+            //var getResponse = await _personService.Get(putDto);//For checking & avoiding email duplication
+            //switch (ModelState.IsValid)
+            //{
+            //    case true when getResponse.Value is null:
+            //    {
+            //        var putResponse = await _personService.Put(dto);
+            //        return putResponse.IsSuccessful ? Ok() : BadRequest();
+            //    }
+            //    case true when getResponse.Value is not null://For checking & avoiding email duplication
+            //        return Conflict(dto);
+            //    default:
+            //        return BadRequest();
+            //} 
+            #endregion
+
+            if (ModelState.IsValid)
             {
-                Id = dto.Id
-            };
-            var getResponse= _personService.Get(getDto);
-            if (ModelState.IsValid && getResponse!=null)
-            {
-                var deleteResponse = await _personService.Delete(dto);
-                return Json(deleteResponse);
+                var putResponse = await _personService.Put(dto);
+                return putResponse.IsSuccessful ? Ok() : BadRequest();
             }
             else
             {
                 return BadRequest();
             }
-        }
-        #endregion
-
-        #region [- Put() -]
-        [HttpPut]
-        public async Task<IActionResult> Put(PutPersonServiceDto dto)
-        {
-            Guard_PersonService();
-            var putDto = new GetPersonServiceDto()
-            {
-                Id=dto.Id,
-                FirstName=dto.FirstName,
-                LastName=dto.LastName,
-                Email = dto.Email
-            };
-
-            #region [- For checking & avoiding email duplication -]
-            var getResponse = await _personService.Get(putDto);//For checking & avoiding email duplication
-            switch (ModelState.IsValid)
-            {
-                case true when getResponse.Value is not null:
-                    {
-                        var putResponse = await _personService.Put(dto);
-                        return Json(putResponse);
-                    }
-                case true when getResponse.Value is null://For checking & avoiding email duplication
-                    return Conflict(dto);
-                default:
-                    return BadRequest();
-            }
-            #endregion
         }
         #endregion
     }

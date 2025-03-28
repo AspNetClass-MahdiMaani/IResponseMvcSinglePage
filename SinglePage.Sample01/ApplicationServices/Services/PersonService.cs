@@ -5,9 +5,7 @@ using SinglePage.Sample01.Frameworks.ResponseFrameworks;
 using SinglePage.Sample01.Frameworks.ResponseFrameworks.Contracts;
 using SinglePage.Sample01.Models.DomainModels.PersonAggregates;
 using SinglePage.Sample01.Models.Services.Contracts;
-using System;
 using System.Net;
-using System.Reflection.Metadata.Ecma335;
 
 namespace SinglePage.Sample01.ApplicationServices.Services
 {

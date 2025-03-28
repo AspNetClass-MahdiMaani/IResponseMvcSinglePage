@@ -65,7 +65,7 @@ namespace SinglePage.Sample01.Models.Services.Repositories
             try
             {
                 var responseValue = new Person();
-                if (person.Id.ToString() != "")
+                if (person.Id.ToString() == "")
                 {
                     //responseValue = await _projectDbContext.Person.FindAsync(person.Email);
                     responseValue = await _projectDbContext.Person.Where(c => c.Email == person.Email).SingleOrDefaultAsync();
@@ -96,9 +96,10 @@ namespace SinglePage.Sample01.Models.Services.Repositories
                 }
                 else
                 {
-                    _projectDbContext.Update(obj);
+                    _projectDbContext.Entry(obj).State = EntityState.Modified;
                     await _projectDbContext.SaveChangesAsync();
-                    return new Response<Person>(true,HttpStatusCode.OK, ResponseMessages.SuccessfullOperation,obj);
+                    var response = new Response<Person>(true, HttpStatusCode.OK, ResponseMessages.SuccessfullOperation, obj);
+                    return response;
                 }
 
             }

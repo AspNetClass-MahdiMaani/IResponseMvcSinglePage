@@ -7,7 +7,7 @@ var btnAdd = document.getElementById("btnAdd");
 var btnEdit = document.getElementById("btnEdit");
 var btnDelete = document.getElementById("btnDelete");
 var btnRefresh = document.getElementById("btnRefresh");
-var btnConfirmDelete = document.getElementById("btnConfirmDelete");
+var btnDeleteConfirm = document.getElementById("btnDeleteConfirm");
 
 // Inputs
 var id = document.getElementById("id");
@@ -27,7 +27,6 @@ var confirmDeleteModalBody = document.getElementById("confirmDeleteModalBody");
 
 // Details Modal
 var detailsModal = document.getElementById("detailsModal");
-var detailsModalBody = document.getElementById("detailsModalBody");
 
 // Others
 var chkSelectAll = document.getElementById("selectAll");
@@ -41,8 +40,6 @@ btnEdit.addEventListener("click", Edit);
 btnDelete.addEventListener("click", DeleteSelected);
 chkSelectAll.addEventListener("click", SelectDeselectAll);
 confirmDeleteModal.addEventListener("show.bs.modal", ConfirmDelete);
-detailsModal.addEventListener("show.bs.modal", Details);
-
 
 //Functionalties
 var allRowsCount = 0;
@@ -56,22 +53,21 @@ function LoadData() {
     RefreshPage();
     chkSelectAll.checked = false;
     tbody.innerHTML = "";
-    //Consuming REST api
     fetch("http://Localhost:5268/Person/GetAll")
         .then((res) => res.json())
         .then((dto) => {
-            console.log({ dto });
-            console.table(dto);
+            //console.log({ dto });
+            //console.table(dto);
             let html = "";
             allRowsCount = dto.length;
-            /*console.log('allRowsCount: ' + allRowsCount);*/
+            //console.log('allRowsCount: ' + allRowsCount);
             dto.forEach(function (dto) {
                 html += `<tr id="${dto.id}">
                   <td><input id="${dto.id}" class="form-check-input" type="checkbox" name="chk" onClick="SelectRow(this);"</td>
                   <td id="firstNameCell">${dto.firstName}</td>
                   <td id="lastNameCell">${dto.lastName}</td>
                   <td id="emailCell">${dto.email}</td>
-                     <td>
+                  <td>
                     <input id="${dto.id}" onClick="GetDetails(this);" class="btn btn-outline-primary btn-sm" type="button" value="Details" data-bs-toggle="modal" data-bs-target="#detailsModal">
                     <input id="${dto.id}" onClick="ConfirmDelete(this);" class="btn btn-outline-danger btn-sm" type="button" value="Delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">                   
                   </td>
@@ -80,7 +76,6 @@ function LoadData() {
             tbody.innerHTML = html;
         });
 }
-
 function Add(e) {
     e.preventDefault();
     let isValidData = ValidateFormData();
@@ -110,10 +105,14 @@ function Add(e) {
                 TriggerResultMessage("Operation Failed");
             }
         });
-    }
-}
+    };
+};
 function Edit() {
-    console.log("start editing");
+    //console.log("start editing");
+    if (selectedRows.length === 0) {
+        alert("Please select at least one row to Edit");
+        return;
+    }
     const isValidData = ValidateFormData();
     if (isValidData) {
         const dto = {
@@ -122,7 +121,7 @@ function Edit() {
             LastName: lastName.value,
             Email: email.value
         };
-
+        console.log(dto);
         fetch("http://Localhost:5268/Person/Put", {
             method: "POST",
             headers: {
@@ -143,7 +142,6 @@ function Edit() {
         });
     }
 }
-
 function Delete() {
     fetch("http://Localhost:5268/Person/Delete", {
         method: "POST",
@@ -164,14 +162,37 @@ function Delete() {
 }
 
 function DeleteSelected() {
-    let checkBox = document.getElementsByName("chk");
-    console.log("Mahdi");
-    if (checkBox.checked === false) {
-        ErrorEvent("Not valid");
+    console.clear();
+    if (selectedRows.length === 0) {
+        alert("Please select at least one row to delete");
+        return;
     }
-    else { document.getElementById(selectedRows.id); }
-    Delete();
+
+    let deleteSelectedDto = { Id: selectedRows[0] };
+
+    console.log(deleteSelectedDto);
+
+    fetch("http://Localhost:5268/Person/Delete", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "*/*",
+        },
+        body: JSON.stringify(deleteSelectedDto),
+    }).then((res) => {
+        if (res.status == 200) {
+            TriggerResultMessage("Operation Successful");
+            LoadData();
+        } else {
+            TriggerResultMessage("Operation Failed");
+        }
+    });
+    selectedRows = [];
 }
+
+
+
+
 
 function SelectDeselectAll() {
     const checkBoxes = document.getElementsByName("chk");
@@ -195,7 +216,6 @@ function SelectDeselectAll() {
     }
 
 }
-
 function SelectRow(checkBox) {
     console.clear();
     if (checkBox.checked === true) {
@@ -231,6 +251,16 @@ function SelectRow(checkBox) {
             break;
     }
 }
+function ConfirmDelete(button) {
+    console.clear();
+    //console.log(button);
+    //console.log(button.id);
+    idRowForDelete = button.id;
+    console.log(idRowForDelete);
+    PassDetails(idRowForDelete);
+    console.log(btnConfirmDelete);
+    btnConfirmDelete.addEventListener("click", Delete);
+}
 
 function GetDetails(button) {
     console.log(button.id);
@@ -245,11 +275,10 @@ function GetDetails(button) {
             inModalUl[2].innerText = `Email : ${json.email}`;
         });
 }
-
 function RefreshPage() {
-    btnAdd.disabled = false;
-    btnEdit.disabled = false;
-    btnDelete.disabled = false;
+    //btnAdd.disabled = false;
+    //btnEdit.disabled = true;
+    //btnDelete.disabled = true;
 
     firstName.classList.remove("is-invalid", "is-valid");
     lastName.classList.remove("is-invalid", "is-valid");
@@ -265,7 +294,6 @@ function RefreshPage() {
     emailValidationMessage.innerText = "";
 
 }
-
 function ValidateFormData() {
     let isValidData = true;
 
@@ -278,18 +306,18 @@ function ValidateFormData() {
     }
 
     if (lastName.value === "") {
-        lastNameValidationMessage.innerText = "Lastname is required";
+        lastNameValidationMessage.innerText = "Last name is required";
         lastName.classList.add("is-invalid");
         isValidData = false;
     } else {
         lastName.classList.add("is-valid");
     }
 
-    if (/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    if (! /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
         .test(email.value)) {
-        email.innerText = "Richtig email";
-        email.classList.add("is-valid");
-        isValidData = true;
+        email.innerText = "Wrong email";
+        email.classList.add("is-invalid");
+        isValidData = false;
 
         //const validateEmail = (email) => {
         //    return email.match(
@@ -299,18 +327,6 @@ function ValidateFormData() {
     }
     return isValidData;
 }
-
-function ConfirmDelete(button) {
-    console.clear();
-    //console.log(button);
-    //console.log(button.id);
-    idRowForDelete = button.id;
-    console.log(idRowForDelete);
-    PassDetails(idRowForDelete);
-    console.log(btnConfirmDelete);
-    btnConfirmDelete.addEventListener("click", Delete);
-}
-
 function PassDetails(id) {
     let firstName = document.querySelector(
         `tr[id="${id}"] td[id="firstNameCell"]`
@@ -323,7 +339,6 @@ function PassDetails(id) {
     ).innerText;
     confirmDeleteModalBody.innerHTML = `You are deleting :<br><strong>First Name : ${firstName}<br>Last Name : ${lastName}<br>Email : ${email}</strong><br>Are you sure ?`;
 }
-
 function TriggerResultMessage(message) {
     resultMessage.innerText = message;
     resultMessage.style.opacity = "1";
